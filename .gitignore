@@ -1,0 +1,6 @@
+.DS_Store
+target/
+prometheus_data/
+# env/
+# settings/
+# configs/
