@@ -25,15 +25,26 @@ fn init_logs() -> Logger {
     }
     pretty_env_logger::try_init().expect("Logger setup failed");*/
 
-    let drain = slog_term::TermDecorator::new().stdout().build();
-    let drain = slog_term::FullFormat::new(drain)
+    let term_decor = slog_term::TermDecorator::new().stdout().build();
+    let term_drain = slog_term::FullFormat::new(term_decor)
         .use_file_location()
         .build()
         .fuse();
-    let drain = slog_async::Async::new(drain)
+
+    // let json_drain = std::sync::Mutex::new(
+    //     slog_json::Json::new(std::io::stdout())
+    //         .add_default_keys()
+    //         .build()
+    //         .fuse(),
+    // );
+
+    // let dublicate_drain = slog::Duplicate(term_drain, json_drain).fuse();
+
+    let drain = slog_async::Async::new(term_drain)
         .overflow_strategy(OverflowStrategy::Block)
         .build()
         .fuse();
+
     slog::Logger::root(drain, slog::o!())
 
     // let _log_guard = slog_scope::set_global_logger(logger);

@@ -22,8 +22,9 @@ chrono = {version = "0.4", features = ["serde"]}
 slog = {version = "2.7", features = ["max_level_trace", "release_max_level_trace"]}
 slog-term = "2.9"
 slog-async = "2.7"
-slog-stdlog = "4.1"
-slog-scope = "4.4"
+# slog-json = "2.6"
+# slog-stdlog = "4.1"
+# slog-scope = "4.4"
 # sloggers = "2.1"
 # log = "0.4"
 # pretty_env_logger = "0.4"
