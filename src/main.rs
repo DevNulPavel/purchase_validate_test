@@ -6,11 +6,39 @@ use crate::{
     app_arguments::AppArguments,
     app_config::{Config, PurchaseData},
 };
-use log::{debug, info};
 use serde::{Deserialize, Serialize};
-use std::env::{self};
+use slog::{debug, info, Drain, Logger};
+use slog_async::OverflowStrategy;
+// use sloggers::{
+//     terminal::{Destination, TerminalLoggerBuilder},
+//     types::Severity,
+//     Build,
+// };
+// use std::env::{self};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+fn init_logs() -> Logger {
+    /*const LOG_VAR: &str = "RUST_LOG";
+    if env::var(LOG_VAR).is_err() {
+        env::set_var(LOG_VAR, "info");
+    }
+    pretty_env_logger::try_init().expect("Logger setup failed");*/
+
+    let drain = slog_term::TermDecorator::new().stdout().build();
+    let drain = slog_term::FullFormat::new(drain)
+        .use_file_location()
+        .build()
+        .fuse();
+    let drain = slog_async::Async::new(drain)
+        .overflow_strategy(OverflowStrategy::Block)
+        .build()
+        .fuse();
+    slog::Logger::root(drain, slog::o!())
+
+    // let _log_guard = slog_scope::set_global_logger(logger);
+    // let _guard = slog_stdlog::init().expect("Slog as log backend");
+}
 
 #[tokio::main]
 async fn main() {
@@ -21,19 +49,15 @@ async fn main() {
     // human_panic::setup_panic!();
 
     // Логи
-    const LOG_VAR: &str = "RUST_LOG";
-    if env::var(LOG_VAR).is_err() {
-        env::set_var(LOG_VAR, "info");
-    }
-    pretty_env_logger::try_init().expect("Logger setup failed");
+    let logger = init_logs();
 
     // Аргументы приложения
     let app_arguments = AppArguments::new().expect("App arguments parsing failed");
-    debug!("App arguments: {:?}", app_arguments);
+    debug!(logger, "App arguments: {:?}", app_arguments);
 
     // Загружаем файлик конфига
     let config = Config::parse_from_file(app_arguments.config).expect("Config load failed");
-    debug!("App config: {:?}", config);
+    debug!(logger, "App config: {:?}", config);
 
     // Создаем переиспользуемый HTTP клиент
     let http_client = reqwest::ClientBuilder::new()
@@ -42,7 +66,9 @@ async fn main() {
 
     // Идем по всем тестам и выполняем их
     for test in config.tests.into_iter() {
-        info!("Test case: {}", test.purchase.product_id);
+        // TODO: Убрать клонирование
+        let logger = logger.new(slog::o!("product" => test.purchase.product_id.clone()));
+        info!(logger, "Test start"; "test" => "test");
 
         #[derive(Debug, Serialize)]
         struct JsonBody {
@@ -82,7 +108,7 @@ async fn main() {
             .text()
             .await
             .expect("Response body receive failed");
-        debug!("Response: {response_text}");
+        debug!(logger, "Received from server"; "response_text" => &response_text);
 
         let response_data =
             serde_json::from_str::<JsonResponse>(&response_text).expect("Json parsing failed");
@@ -90,5 +116,8 @@ async fn main() {
             response_data.data.status, test.response.status,
             "Invalid test response status"
         );
+
+        // drop(logger);
+        // drop(test);
     }
 }
