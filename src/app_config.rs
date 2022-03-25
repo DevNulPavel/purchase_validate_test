@@ -13,6 +13,8 @@ pub struct PurchaseData {
     pub order_id: String,
     #[serde(deserialize_with = "deserialize_string_not_empty")]
     pub receipt: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub client_identifier: Option<String>
 }
 
 #[derive(Deserialize, Debug)]
@@ -23,8 +25,6 @@ pub struct ResponseData {
 
 #[derive(Deserialize, Debug)]
 pub struct TestCase {
-    #[serde(deserialize_with = "deserialize_string_not_empty")]
-    pub project_name: String,
     pub purchase: PurchaseData,
     pub response: ResponseData,
 }
@@ -33,6 +33,10 @@ pub struct TestCase {
 pub struct Config {
     #[serde(deserialize_with = "deserialize_url")]
     pub api_url: Url,
+    #[serde(deserialize_with = "deserialize_string_not_empty")]
+    pub secret_key: String,
+    #[serde(deserialize_with = "deserialize_string_not_empty")]
+    pub project_name: String,
     pub tests: Vec<TestCase>,
 }
 

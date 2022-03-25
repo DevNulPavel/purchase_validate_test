@@ -4,11 +4,12 @@ mod helpers;
 
 use crate::{
     app_arguments::AppArguments,
-    app_config::{Config, PurchaseData, TestCase},
+    app_config::{Config, TestCase},
 };
 use eyre::WrapErr;
 use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
+use sha1::{digest::Digest, Sha1};
 use slog::{crit, debug, info, trace, Drain, Level, Logger};
 use slog_async::OverflowStrategy;
 // use std::sync::{Arc};
@@ -58,24 +59,74 @@ fn init_logs(app_arguments: &AppArguments) -> Logger {
 
 // Тело запроса к серверу
 #[derive(Debug, Serialize)]
-struct JsonRequestBody {
-    project_name: String,
-    purchase_data: PurchaseData
+struct JsonRequestBody<'a> {
+    project_name: &'a str,
+    payment_info: String,
+    payment_info_signature: String,
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+#[allow(dead_code)] // TODO: ???
+#[derive(Debug, Deserialize)]
+struct PurchaseStatus {
+    status: String,
+    description: Option<String>,
+    payload: Option<Vec<String>>,
+}
+
+// #[allow(dead_code)]
+#[derive(Debug, Deserialize)]
+struct PurchaseResponseData {
+    validation_result: String,
+    validation_result_signature: String,
+}
+
+#[allow(dead_code)] // TODO: ???
+#[derive(Debug, Deserialize)]
+struct JsonResponse {
+    message: Option<String>,
+    #[serde(with = "chrono::serde::ts_seconds")]
+    timestamp: chrono::DateTime<chrono::Utc>,
+    datetime: String,
+    data: PurchaseResponseData,
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Запускаем проверку покупки
 async fn check_purchase(
     logger: &Logger,
     test: TestCase,
     http_client: &Client,
+    project_name: &str,
+    secret_key: &str,
     api_url: &Url,
 ) -> Result<(), eyre::Error> {
+    // Данные о платеже и подпись
+    let purchase_base64_string = {
+        let purchase_json_string =
+            serde_json::to_string(&test.purchase).wrap_err("Purchase info serialize failed")?;
+
+        debug!(logger, "Request data: {purchase_json_string}");
+
+        base64::encode(purchase_json_string)
+    };
+    let purchase_signature = {
+        let mut hasher = Sha1::new();
+        hasher.update(purchase_base64_string.as_bytes());
+        hasher.update(secret_key.as_bytes());
+        let hash_number = hasher.finalize();
+        format!("{:x}", hash_number)
+    };
+
     // Выполняем запрос
     let response_obj = http_client
         .post(api_url.clone())
         .json(&JsonRequestBody {
-            project_name: test.project_name,
-            purchase_data: test.purchase,
+            project_name,
+            payment_info: purchase_base64_string,
+            payment_info_signature: purchase_signature,
         })
         .send()
         .await
@@ -83,35 +134,47 @@ async fn check_purchase(
         .error_for_status()
         .wrap_err("Server returned error status")?;
 
-    #[allow(dead_code)]
-    #[derive(Debug, Deserialize)]
-    struct PurchaseStatus {
-        status: String,
-        description: Option<String>,
-        payload: Option<Vec<String>>,
-    }
-    #[allow(dead_code)]
-    #[derive(Debug, Deserialize)]
-    struct JsonResponse {
-        message: Option<String>,
-        #[serde(with = "chrono::serde::ts_seconds")]
-        timestamp: chrono::DateTime<chrono::Utc>,
-        datetime: String,
-        data: PurchaseStatus,
-    }
-
+    // Ответ от сервера
     let response_text = response_obj
         .text()
         .await
         .wrap_err("Response body receive failed")?;
     debug!(logger, "Received from server: {response_text}");
 
+    // Парсим
     let response_data =
         serde_json::from_str::<JsonResponse>(&response_text).wrap_err("Json parsing failed")?;
+
+    // Вычисляем подпись от данных ответа
+    let calculated_signature = {
+        let mut hasher = Sha1::new();
+        hasher.update(response_data.data.validation_result.as_bytes());
+        hasher.update(secret_key.as_bytes());
+        let hash_number = hasher.finalize();
+        format!("{:x}", hash_number)
+    };
+
+    // Проверяем подпись
     eyre::ensure!(
-        response_data.data.status == test.response.status,
+        calculated_signature == response_data.data.validation_result_signature,
+        "Response signature invalid: calculated {} != received {}",
+        calculated_signature,
+        response_data.data.validation_result_signature
+    );
+
+    // Парсим
+    let response_data = {
+        let response_json_data = base64::decode(response_data.data.validation_result).wrap_err("Base64 decode failed")?;
+        let response_json_string = std::str::from_utf8(&response_json_data).wrap_err("UTF-8 parsing failed")?;
+        debug!(logger, "Received json text: {response_json_string}");
+        serde_json::from_str::<PurchaseStatus>(response_json_string)
+            .wrap_err("Json parsing failed")?
+    };
+
+    eyre::ensure!(
+        response_data.status == test.response.status,
         "Status invalid: received {} != required {}",
-        response_data.data.status,
+        response_data.status,
         test.response.status
     );
 
@@ -145,7 +208,12 @@ async fn main() {
         .expect("HTTP clien build failed");
 
     // Разворачиваем на отдельные поля
-    let Config { api_url, tests } = config;
+    let Config {
+        api_url,
+        project_name,
+        secret_key,
+        tests,
+    } = config;
 
     /*
     // Идем по всем тестам и выполняем их
@@ -157,7 +225,7 @@ async fn main() {
             // Создаем логирование для данной задачи с контекстом
             let logger = logger
                     .new(slog::o!("index" => format!("{}", i), "product" => test.purchase.product_id.clone()));
-            
+
             // Клоны Arc для асинхронной задачи
             let http_client = http_client.clone();
             let api_url = api_url.clone();
@@ -190,12 +258,22 @@ async fn main() {
 
     for (i, test) in tests.into_iter().enumerate() {
         // Создаем логирование для данной задачи с контекстом
-        let logger = logger
-            .new(slog::o!("index" => format!("{}", i), "product" => test.purchase.product_id.clone()));
+        let logger = logger.new(
+            slog::o!("index" => format!("{}", i), "product" => test.purchase.product_id.clone()),
+        );
 
         trace!(logger, "Test start");
 
-        match check_purchase(&logger, test, &http_client, &api_url).await {
+        match check_purchase(
+            &logger,
+            test,
+            &http_client,
+            &project_name,
+            &secret_key,
+            &api_url,
+        )
+        .await
+        {
             Ok(_) => {
                 info!(logger, "Test passed");
             }
