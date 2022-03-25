@@ -10,4 +10,5 @@ RUN_APP:
 	cargo clippy && \
 	cargo build --release && \
 	target/release/purchase_validate_test \
-		--config "./configs/production_test.yml"
+		--config "./configs/production_test.yml" \
+		-vv

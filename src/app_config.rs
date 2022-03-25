@@ -24,7 +24,7 @@ pub struct ResponseData {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Test {
+pub struct TestCase {
     pub purchase: PurchaseData,
     pub response: ResponseData,
 }
@@ -33,7 +33,7 @@ pub struct Test {
 pub struct Config {
     #[serde(deserialize_with = "deserialize_url")]
     pub api_url: Url,
-    pub tests: Vec<Test>,
+    pub tests: Vec<TestCase>,
 }
 
 impl Config {
