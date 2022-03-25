@@ -6,8 +6,6 @@ use std::{fs::File, io::BufReader, path::PathBuf};
 #[derive(Deserialize, Serialize, Debug)]
 pub struct PurchaseData {
     #[serde(deserialize_with = "deserialize_string_not_empty")]
-    pub project_name: String,
-    #[serde(deserialize_with = "deserialize_string_not_empty")]
     pub platform: String,
     #[serde(deserialize_with = "deserialize_string_not_empty")]
     pub product_id: String,
@@ -25,6 +23,8 @@ pub struct ResponseData {
 
 #[derive(Deserialize, Debug)]
 pub struct TestCase {
+    #[serde(deserialize_with = "deserialize_string_not_empty")]
+    pub project_name: String,
     pub purchase: PurchaseData,
     pub response: ResponseData,
 }

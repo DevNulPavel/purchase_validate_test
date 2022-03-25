@@ -56,6 +56,13 @@ fn init_logs(app_arguments: &AppArguments) -> Logger {
     // let _guard = slog_stdlog::init().expect("Slog as log backend");
 }
 
+// Тело запроса к серверу
+#[derive(Debug, Serialize)]
+struct JsonRequestBody {
+    project_name: String,
+    purchase_data: PurchaseData
+}
+
 // Запускаем проверку покупки
 async fn check_purchase(
     logger: &Logger,
@@ -63,15 +70,11 @@ async fn check_purchase(
     http_client: &Client,
     api_url: &Url,
 ) -> Result<(), eyre::Error> {
-    #[derive(Debug, Serialize)]
-    struct JsonBody {
-        purchase_data: PurchaseData,
-    }
-
     // Выполняем запрос
     let response_obj = http_client
         .post(api_url.clone())
-        .json(&JsonBody {
+        .json(&JsonRequestBody {
+            project_name: test.project_name,
             purchase_data: test.purchase,
         })
         .send()
