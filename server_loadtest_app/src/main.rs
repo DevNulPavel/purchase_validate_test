@@ -2,7 +2,8 @@ mod app_arguments;
 
 use crate::app_arguments::AppArguments;
 use eyre::{ContextCompat, WrapErr};
-use slog::{crit, debug, info, Drain, Level, Logger};
+use owo_colors::OwoColorize;
+use slog::{crit, debug, Drain, Level, Logger};
 use slog_async::OverflowStrategy;
 use std::sync::Arc;
 use validate_lib::{check_purchase, Config};
@@ -79,6 +80,7 @@ async fn main() -> Result<(), eyre::Error> {
 
     // Создаем переиспользуемый HTTP клиент
     let http_client = reqwest::ClientBuilder::new()
+        .tcp_keepalive(None)
         .build()
         .wrap_err("HTTP clien build failed")?;
 
@@ -150,7 +152,7 @@ async fn main() -> Result<(), eyre::Error> {
     }
 
     let average_msec = total_requests_duration.as_millis() / total_finished_requests as u128;
-    info!(logger, "Average time per request: {}ms", average_msec);
+    println!("Average time per request: {} mSec", average_msec.green());
 
     Ok(())
 }

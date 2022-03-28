@@ -1019,6 +1019,7 @@ dependencies = [
  "eyre",
  "futures",
  "helpers_lib",
+ "owo-colors",
  "reqwest",
  "slog",
  "slog-async",

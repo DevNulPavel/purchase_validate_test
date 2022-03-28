@@ -20,5 +20,5 @@ SERVER_LOAD_TEST:
 	cargo build --release && \
 	target/release/server_loadtest_app \
 		--configs "./configs/test_mhouse.yml" \
-		--requests-parallel-threads 8 \
-		--requests-per-thread 1000
+		--requests-parallel-threads 10 \
+		--requests-per-thread 20
