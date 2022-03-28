@@ -1,0 +1,30 @@
+[package]
+name = "config_test_app"
+version = "0.0.1"
+authors = ["Pavel Ershov <devnulpavel@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+helpers_lib = {path = "../helpers_lib"}
+validate_lib = {path = "../validate_lib"}
+eyre = "0.6"
+color-eyre = "0.6"
+# human-panic = "1.0"
+structopt = "0.3"
+tokio = {version = "1.17", features = ["full"]}
+futures = "0.3"
+serde = {version = "1.0", features = ["derive"]}
+serde_json = "1.0"
+serde_yaml = "0.8"
+reqwest = {version = "0.11", default-features = false, features = ["json", "rustls-tls"]}
+slog = {version = "2.7", features = ["max_level_trace", "release_max_level_trace"]}
+slog-term = "2.9"
+slog-async = "2.7"
+# slog-json = "2.6"
+# slog-stdlog = "4.1"
+# slog-scope = "4.4"
+# sloggers = "2.1"
+# log = "0.4"
+# pretty_env_logger = "0.4"

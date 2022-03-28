@@ -9,6 +9,6 @@ RUN_APP:
 	export RUST_LOG=purchase_validate_test=trace,warn && \
 	cargo clippy && \
 	cargo build --release && \
-	target/release/purchase_validate_test \
+	target/release/config_test_app \
 		--config "./configs/test_mhouse.yml" \
 		-vv

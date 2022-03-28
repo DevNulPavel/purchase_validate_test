@@ -15,18 +15,18 @@ pub struct AppArguments {
 }
 
 impl AppArguments {
-    pub fn new() -> Result<Self, &'static str> {
+    pub fn new() -> Result<Self, eyre::Error> {
         let args = AppArguments::from_args();
         args.validate_arguments()?;
         Ok(args)
     }
 
     /// Выполняем валидацию переданных аргументов приложения
-    fn validate_arguments(&self) -> Result<(), &'static str> {
+    fn validate_arguments(&self) -> Result<(), eyre::Error> {
         macro_rules! validate_argument {
             ($argument: expr, $desc: literal) => {
                 if ($argument) == false {
-                    return Err($desc);
+                    return Err(eyre::eyre!($desc));
                 }
             };
         }
