@@ -10,5 +10,15 @@ VALIDATE_PURCHASES:
 	cargo clippy && \
 	cargo build --release && \
 	target/release/config_test_app \
-		--config "./configs/test_mhouse.yml" \
+		--configs "./configs/test_mhouse.yml" \
 		-vv
+
+SERVER_LOAD_TEST:
+	export RUST_BACKTRACE=full && \
+	export RUST_LOG=purchase_validate_test=trace,warn && \
+	cargo clippy && \
+	cargo build --release && \
+	target/release/server_loadtest_app \
+		--configs "./configs/test_mhouse.yml" \
+		--requests-parallel-threads 8 \
+		--requests-per-thread 1000

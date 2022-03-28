@@ -1,3 +1,2 @@
 [workspace]
-members = ["helpers_lib", "validate_lib", "config_test_app"]
-# "server_loadtest_app"
+members = ["helpers_lib", "validate_lib", "config_test_app", "server_loadtest_app"]

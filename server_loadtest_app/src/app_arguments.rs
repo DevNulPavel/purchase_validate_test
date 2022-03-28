@@ -9,9 +9,17 @@ pub struct AppArguments {
     #[structopt(short, long, parse(from_os_str))]
     pub configs: Vec<PathBuf>,
 
+    /// Number threads for requests
+    #[structopt(short, long)]
+    pub requests_parallel_threads: u32,
+
+    /// Requests count per thread
+    #[structopt(short, long)]
+    pub requests_per_thread: u64,
+
     /// Log level
     #[structopt(short, parse(from_occurrences))]
-    pub verbose: u8
+    pub verbose: u8,
 }
 
 impl AppArguments {
@@ -39,6 +47,15 @@ impl AppArguments {
         }
 
         validate_argument!(self.verbose < 3, "Verbose level must be in range [0; 2]");
+
+        validate_argument!(
+            self.requests_parallel_threads > 0,
+            "Requests threads cannot be zero"
+        );
+        validate_argument!(
+            self.requests_per_thread > 0,
+            "Requests per thread count cannot be zero"
+        );
 
         Ok(())
     }

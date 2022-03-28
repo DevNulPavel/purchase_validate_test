@@ -1,6 +1,6 @@
-use super::{TestCase, project_info::ProjectInfo};
+use super::{project_info::ProjectInfo, TestCase};
 use serde::Deserialize;
-use std::{fs::File, io::BufReader, path::PathBuf};
+use std::{fs::File, io::BufReader, path::Path};
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
@@ -10,7 +10,7 @@ pub struct Config {
 
 impl Config {
     /// Пытаемся распасить конфиг из файлика
-    pub fn parse_from_file(path: PathBuf) -> Result<Config, eyre::Error> {
+    pub fn parse_from_file(path: &Path) -> Result<Config, eyre::Error> {
         // Пробуем загрузить конфиг из файлика в зависимости от расширения
         let config: Config = match path
             .extension()

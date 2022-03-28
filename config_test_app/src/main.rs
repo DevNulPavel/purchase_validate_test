@@ -51,62 +51,12 @@ fn init_logs(app_arguments: &AppArguments) -> Logger {
     // let _guard = slog_stdlog::init().expect("Slog as log backend");
 }
 
-/*async fn execute_tests(logger: Logger, http_client: Client, config: Config) {
-    // Разворачиваем на отдельные поля
-    let Config {
-        api_url,
-        project_name,
-        secret_key,
-        tests,
-    } = config;
-
-    // Идем по всем тестам и выполняем их
-    const MAX_PARALLEL_COUNT: u8 = 4;
-    let api_url = Arc::new(api_url);
-    let mut active_futures = Vec::new();
-    for (i, test) in tests.into_iter().enumerate() {
-        if active_futures.len() < MAX_PARALLEL_COUNT as usize {
-            // Создаем логирование для данной задачи с контекстом
-            let logger = logger
-                .new(slog::o!("index" => format!("{}", i), "product" => test.purchase.product_id.clone()));
-
-            // Клоны Arc для асинхронной задачи
-            let http_client = http_client.clone();
-            let api_url = api_url.clone();
-
-            // Асинхронная задача для проверки
-            let future_for_execute = async move {
-                info!(logger, "Test start");
-                match check_purchase(&logger, test, &http_client, &api_url).await {
-                    Ok(_) => {
-                        info!(logger, "Test passed");
-                    }
-                    Err(err) => {
-                        crit!(logger, "Test failed: {err:#}");
-                    }
-                }
-            };
-
-            // Добавляем запинированную в куче футуру
-            active_futures.push(Box::pin(future_for_execute));
-        } else {
-            // Ждем хоть одну завершенную задачу
-            let (_, _, left_futures) = futures::future::select_all(active_futures).await;
-            active_futures = left_futures;
-        }
-    }
-    while !active_futures.is_empty() {
-        let (_, _, left_futures) = futures::future::select_all(active_futures).await;
-        active_futures = left_futures;
-    }
-}*/
-
 /// Выполняем обработку тестовых платежей
-async fn execute_tests(logger: Logger, http_client: Client, config: Config) {
+async fn execute_tests(logger: &Logger, http_client: &Client, config: &Config) {
     // Разворачиваем на отдельные поля
     let Config { project, tests } = config;
 
-    for (i, test) in tests.into_iter().enumerate() {
+    for (i, test) in tests.iter().enumerate() {
         // Создаем логирование для данной задачи с контекстом
         let logger = logger.new(
             slog::o!("index" => format!("{}", i), "product" => test.purchase.product_id.clone()),
@@ -114,7 +64,7 @@ async fn execute_tests(logger: Logger, http_client: Client, config: Config) {
 
         trace!(logger, "Test start");
 
-        match check_purchase(&logger, &http_client, &project, test).await {
+        match check_purchase(&logger, http_client, project, test).await {
             Ok(_) => {
                 info!(logger, "Test passed");
             }
@@ -143,16 +93,26 @@ async fn main() -> Result<(), eyre::Error> {
     // Покажем параметры для отладки
     debug!(logger, "App arguments: {:?}", app_arguments);
 
-    // Загружаем файлик конфига
-    let config = Config::parse_from_file(app_arguments.config).wrap_err("Config load failed")?;
-    debug!(logger, "App config: {:?}", config);
+    // Загружаем файлики конфига
+    let configs = {
+        let mut configs = Vec::new();
+        for path in app_arguments.configs.iter() {
+            let config = Config::parse_from_file(path).wrap_err("Config load failed")?;
+            configs.push(config);
+        }
+        configs
+    };
+    debug!(logger, "App configs: {:?}", configs);
 
     // Создаем переиспользуемый HTTP клиент
     let http_client = reqwest::ClientBuilder::new()
         .build()
         .wrap_err("HTTP clien build failed")?;
 
-    execute_tests(logger, http_client, config).await;
+    // Идем по списку конфигов и прогоняем каждый
+    for config in configs.iter() {
+        execute_tests(&logger, &http_client, config).await;
+    }
 
     Ok(())
 }

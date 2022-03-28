@@ -57,7 +57,7 @@ pub async fn check_purchase(
     logger: &Logger,
     http_client: &Client,
     project: &ProjectInfo,
-    test: TestCase,
+    test: &TestCase,
 ) -> Result<(), eyre::Error> {
     // Данные о платеже и подпись
     let purchase_base64_string = {

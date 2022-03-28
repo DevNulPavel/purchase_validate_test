@@ -1012,6 +1012,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "server_loadtest_app"
+version = "0.0.1"
+dependencies = [
+ "color-eyre",
+ "eyre",
+ "futures",
+ "helpers_lib",
+ "reqwest",
+ "slog",
+ "slog-async",
+ "slog-term",
+ "structopt",
+ "tokio",
+ "validate_lib",
+]
+
+[[package]]
 name = "sha-1"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
