@@ -1,17 +1,10 @@
-use helpers_lib::{deserialize_string_not_empty, deserialize_url};
-use reqwest::Url;
+use super::{TestCase, project_info::ProjectInfo};
 use serde::Deserialize;
 use std::{fs::File, io::BufReader, path::PathBuf};
-use validate_lib::TestCase;
 
 #[derive(Deserialize, Debug)]
 pub struct Config {
-    #[serde(deserialize_with = "deserialize_url")]
-    pub api_url: Url,
-    #[serde(deserialize_with = "deserialize_string_not_empty")]
-    pub secret_key: String,
-    #[serde(deserialize_with = "deserialize_string_not_empty")]
-    pub project_name: String,
+    pub project: ProjectInfo,
     pub tests: Vec<TestCase>,
 }
 

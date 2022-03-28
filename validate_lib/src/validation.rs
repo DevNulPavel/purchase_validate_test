@@ -1,6 +1,6 @@
-use crate::test_case::TestCase;
+use crate::{project_info::ProjectInfo, test_case::TestCase};
 use eyre::WrapErr;
-use reqwest::{Client, Url};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use sha1::{digest::Digest, Sha1};
 use slog::{debug, Logger};
@@ -55,11 +55,9 @@ fn calc_signature(data: &[u8], key: &[u8]) -> String {
 // Запускаем проверку покупки
 pub async fn check_purchase(
     logger: &Logger,
-    test: TestCase,
     http_client: &Client,
-    project_name: &str,
-    secret_key: &str,
-    api_url: &Url,
+    project: &ProjectInfo,
+    test: TestCase,
 ) -> Result<(), eyre::Error> {
     // Данные о платеже и подпись
     let purchase_base64_string = {
@@ -69,15 +67,17 @@ pub async fn check_purchase(
 
         base64::encode(purchase_json_string)
     };
-    let purchase_signature =
-        calc_signature(purchase_base64_string.as_bytes(), secret_key.as_bytes());
+    let purchase_signature = calc_signature(
+        purchase_base64_string.as_bytes(),
+        project.secret_key.as_bytes(),
+    );
 
     // TODO: Запрос должен был быть GET
     // Выполняем запрос
     let response_obj = http_client
-        .post(api_url.clone())
+        .post(project.api_url.clone())
         .json(&JsonRequestBody {
-            project_name,
+            project_name: &project.name,
             payment_info: purchase_base64_string,
             payment_info_signature: purchase_signature,
         })
@@ -116,7 +116,7 @@ pub async fn check_purchase(
     // Вычисляем подпись от данных ответа
     let calculated_signature = calc_signature(
         response_data.data.validation_result.as_bytes(),
-        secret_key.as_bytes(),
+        project.secret_key.as_bytes(),
     );
 
     // Проверяем подпись

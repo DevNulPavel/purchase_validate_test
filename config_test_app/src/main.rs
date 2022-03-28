@@ -1,12 +1,11 @@
 mod app_arguments;
-mod app_config;
 
-use crate::{app_arguments::AppArguments, app_config::Config};
+use crate::app_arguments::AppArguments;
 use eyre::WrapErr;
 use reqwest::Client;
 use slog::{crit, debug, info, trace, Drain, Level, Logger};
 use slog_async::OverflowStrategy;
-use validate_lib::check_purchase;
+use validate_lib::{check_purchase, Config};
 // use std::sync::{Arc};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -105,12 +104,7 @@ fn init_logs(app_arguments: &AppArguments) -> Logger {
 /// Выполняем обработку тестовых платежей
 async fn execute_tests(logger: Logger, http_client: Client, config: Config) {
     // Разворачиваем на отдельные поля
-    let Config {
-        api_url,
-        project_name,
-        secret_key,
-        tests,
-    } = config;
+    let Config { project, tests } = config;
 
     for (i, test) in tests.into_iter().enumerate() {
         // Создаем логирование для данной задачи с контекстом
@@ -120,16 +114,7 @@ async fn execute_tests(logger: Logger, http_client: Client, config: Config) {
 
         trace!(logger, "Test start");
 
-        match check_purchase(
-            &logger,
-            test,
-            &http_client,
-            &project_name,
-            &secret_key,
-            &api_url,
-        )
-        .await
-        {
+        match check_purchase(&logger, &http_client, &project, test).await {
             Ok(_) => {
                 info!(logger, "Test passed");
             }

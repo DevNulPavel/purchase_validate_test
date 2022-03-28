@@ -4,7 +4,7 @@
 DECRYPT_CONFIGS:
 	git-crypt unlock
 
-RUN_APP:
+VALIDATE_PURCHASES:
 	export RUST_BACKTRACE=full && \
 	export RUST_LOG=purchase_validate_test=trace,warn && \
 	cargo clippy && \
