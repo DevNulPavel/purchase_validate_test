@@ -2,8 +2,9 @@ mod app_arguments;
 
 use crate::app_arguments::AppArguments;
 use eyre::WrapErr;
+use owo_colors::OwoColorize;
 use reqwest::Client;
-use slog::{crit, debug, info, trace, Drain, Level, Logger};
+use slog::{debug, trace, Drain, Level, Logger};
 use slog_async::OverflowStrategy;
 use validate_lib::{check_purchase, Config};
 // use std::sync::{Arc};
@@ -66,11 +67,19 @@ async fn execute_tests(logger: &Logger, http_client: &Client, config: &Config) {
 
         match check_purchase(&logger, http_client, project, test).await {
             Ok(_) => {
-                info!(logger, "Test passed");
+                let desc = format!(
+                    r#"Test passed, project "{}", test number "{}""#,
+                    project.name, i
+                );
+                println!("{}", desc.green());
             }
             Err(err) => {
-                crit!(logger, "Test failed: {err:#}");
-                //std::process::exit(1);
+                let desc = format!(
+                    r#"Test failed, project "{}", test number "{}":"#,
+                    project.name, i
+                );
+                eprintln!("{} {err:#}", desc.red());
+                std::process::exit(1);
             }
         }
     }

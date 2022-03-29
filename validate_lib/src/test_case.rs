@@ -5,12 +5,19 @@ use serde::{Deserialize, Serialize};
 pub struct PurchaseData {
     #[serde(deserialize_with = "deserialize_string_not_empty")]
     pub platform: String,
+
     #[serde(deserialize_with = "deserialize_string_not_empty")]
     pub product_id: String,
+
     #[serde(deserialize_with = "deserialize_string_not_empty")]
     pub order_id: String,
+
     #[serde(deserialize_with = "deserialize_string_not_empty")]
     pub receipt: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub signature: Option<String>,
+    
     #[serde(skip_serializing_if = "Option::is_none")]
     pub client_identifier: Option<String>,
 }

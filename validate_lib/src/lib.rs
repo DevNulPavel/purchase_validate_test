@@ -1,6 +1,8 @@
-mod test_case;
-mod project_info;
-mod validation;
 mod config;
+mod project_info;
+mod test_case;
+mod validation;
 
-pub use crate::{test_case::TestCase, config::Config, project_info::ProjectInfo, validation::check_purchase};
+pub use crate::{
+    config::Config, project_info::ProjectInfo, test_case::TestCase, validation::check_purchase,
+};

@@ -10,8 +10,8 @@ VALIDATE_PURCHASES:
 	cargo clippy && \
 	cargo build --release && \
 	target/release/config_test_app \
-		--configs "./configs/test_mhouse.yml" \
-		-vv
+		--configs "./configs/test_mhouse.yml"
+		# -vv
 
 SERVER_LOAD_TEST:
 	export RUST_BACKTRACE=full && \
