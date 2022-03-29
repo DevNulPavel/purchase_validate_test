@@ -58,27 +58,21 @@ async fn execute_tests(logger: &Logger, http_client: &Client, config: &Config) {
     let Config { project, tests } = config;
 
     for (i, test) in tests.iter().enumerate() {
+        let index = i+1;
+
         // Создаем логирование для данной задачи с контекстом
         let logger = logger.new(
-            slog::o!("index" => format!("{}", i), "product" => test.purchase.product_id.clone()),
+            slog::o!("index" => format!("{}", index), "product" => test.purchase.product_id.clone()),
         );
 
         trace!(logger, "Test start");
 
         match check_purchase(&logger, http_client, project, test).await {
             Ok(_) => {
-                let desc = format!(
-                    r#"Test passed, project "{}", test number "{}""#,
-                    project.name, i
-                );
-                println!("{}", desc.green());
+                println!(r#"{}: test number "{}", order_id: "{}""#, "Test passed".green(), index, test.purchase.order_id);
             }
             Err(err) => {
-                let desc = format!(
-                    r#"Test failed, project "{}", test number "{}":"#,
-                    project.name, i
-                );
-                eprintln!("{} {err:#}", desc.red());
+                eprintln!(r#"{}: test number "{}", order_id: "{}", err: "{err:#}""#, "Test failed".red(), index, test.purchase.order_id);
                 std::process::exit(1);
             }
         }
@@ -120,6 +114,7 @@ async fn main() -> Result<(), eyre::Error> {
 
     // Идем по списку конфигов и прогоняем каждый
     for config in configs.iter() {
+        println!("Begin project: {}", config.project.name.blue());
         execute_tests(&logger, &http_client, config).await;
     }
 
