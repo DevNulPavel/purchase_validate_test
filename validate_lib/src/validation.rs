@@ -44,12 +44,18 @@ struct JsonResponse {
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-fn calc_signature(data: &[u8], key: &[u8]) -> String {
+fn calc_signature(data: &[u8], key: &[u8]) -> Result<String, eyre::Error> {
+    /*use hmac::{Hmac, Mac};
+    let mut hmac: Hmac<Sha1> = Hmac::new_from_slice(key).wrap_err("Hmac create error")?;
+    hmac.update(data);
+    let hash_number = hmac.finalize();
+    Ok(format!("{:x}", hash_number.into_bytes()))*/
+
     let mut hasher = Sha1::new();
     hasher.update(data);
     hasher.update(key);
     let hash_number = hasher.finalize();
-    format!("{:x}", hash_number)
+    Ok(format!("{:x}", hash_number))
 }
 
 // Запускаем проверку покупки
@@ -70,7 +76,8 @@ pub async fn check_purchase(
     let purchase_signature = calc_signature(
         purchase_base64_string.as_bytes(),
         project.secret_key.as_bytes(),
-    );
+    )
+    .wrap_err("Send signature calculate")?;
 
     // TODO: Запрос должен был быть GET
     // Выполняем запрос
@@ -117,7 +124,8 @@ pub async fn check_purchase(
     let calculated_signature = calc_signature(
         response_data.data.validation_result.as_bytes(),
         project.secret_key.as_bytes(),
-    );
+    )
+    .wrap_err("Received signature calculate")?;
 
     // Проверяем подпись
     eyre::ensure!(

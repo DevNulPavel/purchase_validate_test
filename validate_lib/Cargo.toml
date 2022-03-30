@@ -18,4 +18,5 @@ serde_yaml = "0.8"
 reqwest = {version = "0.11", default-features = false, features = ["json", "rustls-tls"]}
 chrono = {version = "0.4", features = ["serde"]}
 sha-1 = "0.10"
+# hmac = "0.12"
 slog = {version = "2.7", features = ["max_level_trace", "release_max_level_trace"]}
