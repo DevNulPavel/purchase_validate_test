@@ -16,7 +16,7 @@ pub struct PurchaseData {
     pub receipt: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub signature: Option<String>,
+    pub receipt_signature: Option<String>,
     
     #[serde(skip_serializing_if = "Option::is_none")]
     pub client_identifier: Option<String>,
