@@ -10,8 +10,9 @@ VALIDATE_PURCHASES:
 	cargo clippy && \
 	cargo build --release && \
 	target/release/config_test_app \
-		--configs "./configs/test_mhouse_win_only.yml" "./configs/test_island2_win_only.yml"
+		--configs "./configs/test_mhouse.yml" "./configs/test_island2.yml"
 		# -vv
+		# "./configs/test_mhouse_win_only.yml" "./configs/test_island2_win_only.yml"
 		# "./configs/test_mhouse.yml" "./configs/test_island2.yml"
 
 SERVER_LOAD_TEST:

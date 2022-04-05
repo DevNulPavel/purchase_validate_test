@@ -69,10 +69,10 @@ async fn execute_tests(logger: &Logger, http_client: &Client, config: &Config) {
 
         match check_purchase(&logger, http_client, project, test).await {
             Ok(_) => {
-                println!(r#"{}: test number "{}", order_id: "{}""#, "Test passed".green(), index, test.purchase.order_id);
+                println!(r#"{}: test number "{}", order_id: "{}", platform "{}""#, "Test passed".green(), index, test.purchase.order_id, test.purchase.platform);
             }
             Err(err) => {
-                eprintln!(r#"{}: test number "{}", order_id: "{}", err: "{err:#}""#, "Test failed".red(), index, test.purchase.order_id);
+                eprintln!(r#"{}: test number "{}", order_id: "{}", platform "{}", err: "{err:#}""#, "Test failed".red(), index, test.purchase.order_id, test.purchase.platform);
                 std::process::exit(1);
             }
         }
