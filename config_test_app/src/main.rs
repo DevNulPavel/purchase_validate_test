@@ -73,7 +73,7 @@ async fn execute_tests(logger: &Logger, http_client: &Client, config: &Config) {
             }
             Err(err) => {
                 eprintln!(r#"{}: test number "{}", order_id: "{}", platform "{}", err: "{err:#}""#, "Test failed".red(), index, test.purchase.order_id, test.purchase.platform);
-                std::process::exit(1);
+                // std::process::exit(1);
             }
         }
     }
